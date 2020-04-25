@@ -1,0 +1,105 @@
+from selenium import webdriver
+from time import sleep
+import smtplib
+
+# intialisation
+id='..........' # id
+url='https://jntuaresults.ac.in/view-results-56736237.html'
+
+# code
+class obtain_result:
+    def __init__(self):
+        self.driver=webdriver.Chrome()
+        self.driver.get(url)
+        sleep(2)
+    def keys(self,path,keys):
+        self.path=path
+        self.keys=keys
+        self.driver.find_element_by_xpath(self.path)\
+        .send_keys(self.keys)
+        sleep(1)
+    def click(self,path):
+        self.path=path
+        self.driver.find_element_by_xpath(self.path)\
+        .click()
+        sleep(5)
+    def table_rows(self,path):
+        self.path=path
+        result=self.driver.find_element_by_xpath(self.path).text
+        result=result.split('\n')
+        return(result)
+        
+bot= obtain_result()
+bot.keys('//*[@id="ht"]',id)
+bot.click('/html/body/div/div[1]/div/div/center/table/tbody/tr/th/center/input[2]')
+result=bot.table_rows('//*[@id="rs"]')
+
+print("result checked !")
+# data processing
+a=result.copy()
+subjects=[]
+sub_code=[]
+internals=[]
+externals=[]
+totals=[]
+pfs=[]
+credits=[]
+grades=[]
+for i in range(2,len(a)):
+    a[i]=a[i].split(' ')
+    sub=""
+    for j in a[i][1:-6]:
+        sub=sub+j[0]
+    subjects.append(sub)
+    sub_code.append(a[i][0])
+    internals.append(a[i][-6])
+    externals.append(a[i][-5])
+    totals.append(a[i][-4])
+    pfs.append(a[i][-3])
+    credits.append(a[i][-2])
+    grades.append(a[i][-1])
+
+msg=""
+for i in range(len(subjects)):
+    msg += f'''{sub_code[i]}\t{internals[i]}\t{externals[i]}\t{totals[i]}\t{pfs[i]}\t{credits[i]}\t{grades[i]}\t{subjects[i]}\n'''
+print(msg)    
+
+print("data processing checked!")
+# evaluation
+pcount=0
+fcount=0
+re=''
+for i in range(2,len(result)):
+    if result[i][-5] == "P":
+        pcount+=1
+    else:
+        fcount+=1
+        
+if fcount==0:
+    re="CONGRAGULATIONS! You Have Cleared All Subjects"
+else:
+    re=f"You have {fcount} no of backlogs. Better luck next time"
+    
+print("evaluation checked! ")
+
+# Sending mail
+def send_mail(re,msg):
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    
+    server.login('..........','.........')    #id password
+    
+    subject = "Jntua Results"
+    body = f"{re}\n{msg}"
+    ms = f"Subject: {subject} \n\n {body}"
+    server.sendmail(
+    '..............',   #from
+    '........................',   #to
+    ms
+    )
+    print("Hey mail has been sent :) ")
+    server.quit()
+
+send_mail(re,msg)
